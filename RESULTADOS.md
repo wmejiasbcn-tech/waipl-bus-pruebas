@@ -9,6 +9,7 @@ Ejecutada por Hark en GitHub real (este repo), con nodos inventados (alfa, beta)
 | 2b | Mensaje alterado después de sellar | #3 | DENY + aviso |
 | 3 | Aviso por riesgo alto | #4 | ALLOW + `risk:high` + `to:soberano` + asignado |
 | 4 | Sin duplicados: reejecutar los workflows de #1 y #4 (evento repetido) | #1, #4 | Sigue habiendo 1 asiento en cada uno. Prueba de máquina: [ejecución de #4, intento 2](https://github.com/wmejiasbcn-tech/waipl-bus-pruebas/actions/runs/39826378237/attempts/2) y [ejecución de #1, intento 2](https://github.com/wmejiasbcn-tech/waipl-bus-pruebas/actions/runs/39826374912/attempts/2): el registro dice `{"skipped":true,"reason":"ya asentado: ALLOW"}` |
+| 4c | Evento duplicado provocado a propósito (20:28 CEST) sobre un ALLOW ya recibido y un DENY | #36, #2 | [#36, intento 2](https://github.com/wmejiasbcn-tech/waipl-bus-pruebas/actions/runs/39829254201/attempts/2): `ya asentado: ALLOW`; [#2, intento 2](https://github.com/wmejiasbcn-tech/waipl-bus-pruebas/actions/runs/39826374954/attempts/2): `ya asentado: DENY`. Después: 1 asiento en cada uno, mismo veredicto, #36 sigue con `bus:received` |
 | 4b | Reenvío con TRACE repetido | #5 | DENY «TRACE ya se usó» |
 | 5 | Interruptor de apagado (BUS_KILL=true) y encendido | #7 | KILLED; al encender, el barrido lo procesó una sola vez → ALLOW (2 asientos: KILLED, ALLOW) |
 | 7 | Recibido del destinatario (alfa → soberano; la cuenta del soberano comenta) | #36 | `bus:allowed` → `bus:received` |
