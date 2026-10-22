@@ -14,10 +14,11 @@ Ejecutada por Hark en GitHub real (este repo), con nodos inventados (alfa, beta)
 | 5 | Interruptor de apagado (BUS_KILL=true) y encendido | #7 | KILLED; al encender, el barrido lo procesó una sola vez → ALLOW (2 asientos: KILLED, ALLOW) |
 | 7 | Recibido del destinatario (alfa → soberano; la cuenta del soberano comenta) | #36 | `bus:allowed` → `bus:received` |
 | 7b | Comentario de quien NO es destinatario | #1 | Sigue en `bus:allowed`, sin recibido |
+| 8 | Llaves ocultas (secretos de GitHub) creadas por Sentinel con valores nuevos e inventados (2026-10-22, ~20:50 CEST) | #37, #38 | #37, sellado con la llave oculta nueva: ALLOW. #38, sellado con la llave vieja del archivo: DENY «SELLO no válido». Desde que existen las llaves ocultas, el archivo `seals-prueba.json` ya no se usa |
 | 6 | Límite de 30 por nodo y hora | #8–#34, #35 | 30 ALLOW en la hora; #35 → RATE_LIMITED + aviso |
 
 **Regla de reproceso (por escrito, a petición de la verificación):** un Issue con asiento `ALLOW`, `DENY` o `RATE_LIMITED` no se vuelve a decidir nunca. Solo `KILLED` se reprocesa, una vez, cuando el bus se enciende (portero.js, líneas 99–107). Por eso #7 tiene dos asientos y no es una contradicción.
 
 **Hallazgo real (no lo detectaban las pruebas simuladas):** dos ejecuciones a la vez intentaron crear la misma etiqueta y una falló (HTTP 422 `already_exists`). Arreglado aquí y en wmejiasbcn-tech/Will-AI-Project-Lab#217 (commit 1105e13), con la prueba 31.
 
-**Sin probar aquí:** secretos y variables de GitHub (la app Hark no puede crearlos: HTTP 403; en este repo, los sellos y BUS_KILL van en archivos), que a William le llegue la notificación de GitHub (solo se comprobó la asignación), el «recibido» de un nodo con cuenta propia distinta del soberano (no existe ninguna; T7 lo prueba con la única cuenta real), el recibido sellado (no está programado) y el atasco de 24 h.
+**Sin probar aquí:** variables de GitHub (BUS_KILL sigue en archivo: la app Hark no puede crear variables, HTTP 403). Los secretos sí, desde la fila 8 (Hark no puede listarlos; lo prueban los veredictos de #37 y #38), que a William le llegue la notificación de GitHub (solo se comprobó la asignación), el «recibido» de un nodo con cuenta propia distinta del soberano (no existe ninguna; T7 lo prueba con la única cuenta real), el recibido sellado (no está programado) y el atasco de 24 h.
