@@ -1,0 +1,8 @@
+{
+  "_nota": "REPO DE PRUEBAS. Nodos inventados alfa y beta. Fechas reales de prueba (7 días). Ningún dato del ecosistema.",
+  "permits": [
+    { "id": "T-001", "src": "soberano", "dst": "*",    "cap": "*", "granted_by": "soberano", "expires_at": "2026-10-29T18:00:00Z" },
+    { "id": "T-002", "src": "alfa",     "dst": "beta", "cap": "*", "granted_by": "soberano", "expires_at": "2026-10-29T18:00:00Z" },
+    { "id": "T-003", "src": "beta",     "dst": "alfa", "cap": "*", "granted_by": "soberano", "expires_at": "2026-10-29T18:00:00Z" }
+  ]
+}
