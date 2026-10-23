@@ -35,18 +35,29 @@ function prompt(carta, issue) {
   ];
 }
 
+const TIEMPO_MAX_MS = 60000;
+
 async function preguntarNvidia({ env, messages, fetchImpl }) {
   const base = (env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/\/$/, '');
   const model = env.NVIDIA_MODEL || 'nvidia/nemotron-3-super-120b-a12b';
-  const res = await (fetchImpl || fetch)(base + '/chat/completions', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + env.NVIDIA_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 700, stream: false }),
-  });
+  let res, body;
+  try {
+    // Errores de red y tiempo agotado: no se publica nada (falla cerrado). El mensaje de error
+    // nunca incluye la llave: solo se devuelve el nombre del error.
+    res = await (fetchImpl || fetch)(base + '/chat/completions', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + env.NVIDIA_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 700, stream: false }),
+      signal: AbortSignal.timeout(TIEMPO_MAX_MS),
+    });
+  } catch (e) {
+    return { ok: false, status: 'red:' + (e && e.name ? e.name : 'error'), model };
+  }
   if (!res.ok) return { ok: false, status: res.status, model };
-  const body = await res.json();
+  try { body = await res.json(); } catch (_) { return { ok: false, status: 'mal-formada', model }; }
   const text = body && body.choices && body.choices[0] && body.choices[0].message && body.choices[0].message.content;
-  return text ? { ok: true, text: String(text).trim().slice(0, 4000), model, id: body.id || null } : { ok: false, status: 'vacío', model };
+  if (typeof text !== 'string' || !text.trim()) return { ok: false, status: 'vacía', model };
+  return { ok: true, text: text.trim().slice(0, 4000), model, id: body.id || null };
 }
 
 async function run({ github, repo, dir, env, killed, fetchImpl, now }) {
@@ -57,7 +68,7 @@ async function run({ github, repo, dir, env, killed, fetchImpl, now }) {
   const hechos = [];
   const open = await github.paginate(github.rest.issues.listForRepo, { ...repo, state: 'open', labels: 'bus,bus:allowed', per_page: 100 });
   for (const issue of open) {
-    if (hechos.length >= MAX_POR_PASADA) break;
+    if (hechos.filter((h) => h.estado === 'RESPONDIDO').length >= MAX_POR_PASADA) break;
     if (issue.pull_request) continue;
     const labels = (issue.labels || []).map((l) => (typeof l === 'string' ? l : l.name));
     if (labels.includes(ACK_LABEL) || labels.includes('bus:received')) continue;
@@ -69,6 +80,7 @@ async function run({ github, repo, dir, env, killed, fetchImpl, now }) {
     if (!porNodo[nodo]) continue; // ese nodo no tiene receptor
     const r = await preguntarNvidia({ env, messages: prompt(porNodo[nodo], issue), fetchImpl });
     if (!r.ok) { hechos.push({ issue: issue.number, nodo, estado: 'NVIDIA_FALLO', status: r.status }); continue; }
+    // Límite real de publicaciones por pasada (cuenta solo las publicadas).
     const registro = { v: 1, issue: issue.number, nodo, at: now.toISOString(), modelo: r.model, respuesta_id: r.id, trace: ledger.trace || null };
     await github.rest.issues.createComment({ ...repo, issue_number: issue.number, body:
       MARKER + '\n**Portavoz automático de ' + nodo + '** (NVIDIA, no es ' + nodo + ' en persona; no cuenta como recibido)\n\n' + r.text +
@@ -81,4 +93,4 @@ async function run({ github, repo, dir, env, killed, fetchImpl, now }) {
   return { estado: 'OK', hechos };
 }
 
-module.exports = { run, cartas, prompt, preguntarNvidia, ACK_LABEL, MARKER };
+module.exports = { run, cartas, prompt, preguntarNvidia, ACK_LABEL, MARKER, MAX_POR_PASADA };
