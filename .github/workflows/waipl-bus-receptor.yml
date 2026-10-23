@@ -1,0 +1,47 @@
+name: WAIPL-BUS receptor (NVIDIA)
+
+# BORRADOR de Hark (2026-10-23). REPO DE PRUEBAS: solo datos inventados.
+# Se ejecuta cuando termina el portero y cada 15 minutos. Sin el secreto NVIDIA_API_KEY no publica nada (falla cerrado).
+# Responde como portavoz automático; nunca pone bus:received.
+
+on:
+  workflow_run:
+    workflows: ["WAIPL-BUS portero"]
+    types: [completed]
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: waipl-bus-receptor
+  cancel-in-progress: false
+
+jobs:
+  receptor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/waipl-bus
+          persist-credentials: false
+      - name: Receptor
+        uses: actions/github-script@v7
+        env:
+          BUS_KILL: ${{ vars.BUS_KILL }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          NVIDIA_BASE_URL: ${{ vars.NVIDIA_BASE_URL }}
+          NVIDIA_MODEL: ${{ vars.NVIDIA_MODEL }}
+        with:
+          script: |
+            const fs = require('fs');
+            const dir = process.env.GITHUB_WORKSPACE + '/.github/waipl-bus/';
+            const receptor = require(dir + 'receptor.js');
+            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8').trim() : '';
+            const killed = String(process.env.BUS_KILL || killFile || '').toLowerCase() === 'true';
+            const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed });
+            core.info('Receptor: ' + JSON.stringify(r));
+            if (r.estado === 'SIN_LLAVE') core.warning('Falta el secreto NVIDIA_API_KEY: no se publica nada.');
