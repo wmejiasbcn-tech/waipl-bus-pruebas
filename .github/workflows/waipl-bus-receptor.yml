@@ -53,7 +53,5 @@ jobs:
             const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed, killNow, traza });
             core.info('Receptor: ' + JSON.stringify(r));
             // Registro fuera del Issue: resumen de la ejecución en GitHub Actions (trazabilidad).
-            await core.summary.addHeading('WAIPL-BUS receptor').addRaw('Ejecución ' + traza.run_id + ' · estado: ' + r.estado + ' · ' + new Date().toISOString()).addBreak()
-              .addTable([[{ data: 'Issue', header: true }, { data: 'Nodo', header: true }, { data: 'Resultado', header: true }, { data: 'Detalle', header: true }],
-                ...((r.hechos || []).map((h) => [String(h.issue), h.nodo, h.estado, String(h.status || h.fase || '')]))]).write();
+            await receptor.resumen(core, traza, r);
             if (r.estado === 'SIN_LLAVE') core.warning('Falta el secreto NVIDIA_API_KEY: no se publica nada.');
