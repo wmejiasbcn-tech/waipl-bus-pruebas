@@ -5,7 +5,7 @@
 const receptor = require('../receptor');
 const { killAhora, KILL_LABEL } = require('../kill');
 
-async function run({ github, context, core, dir, varValue }) {
+async function run({ github, context, core, dir, varValue, nvidiaKey }) {
   const repo = context.repo;
   const filas = [];
   const fallos = [];
@@ -106,6 +106,42 @@ async function run({ github, context, core, dir, varValue }) {
     publicados = 0;
     const r8b = await receptor.run({ github: espia(soloEste(m8.number)), repo, dir, env: { NVIDIA_API_KEY: 'ensayo-sin-valor-real' }, killed: false, killNow: kill, fetchImpl: prov, traza });
     ok('S8c', 'Idempotencia real: una segunda pasada no vuelve a responder', publicados === 0 && !(r8b.hechos || []).length, 'publicados=' + publicados);
+
+    // 9 y 10. NVIDIA REAL (solo si el secreto NVIDIA_API_KEY existe). Como mucho 2 llamadas reales por ensayo.
+    if (!nvidiaKey) { filas.push(['S9', 'Inferencia real con NVIDIA', 'SIN LLAVE', 'el secreto NVIDIA_API_KEY no está configurado: no se llama a NVIDIA']); }
+    else {
+      const envR = { NVIDIA_API_KEY: nvidiaKey };
+      // 9. Inferencia real publicada como acuse en un Issue de ensayo
+      const m9 = await nuevoIssue('[ENSAYO] hark → carla · NVIDIA real', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados: «Prueba de canal del bus. Confirma recepción en una línea.»');
+      await github.rest.issues.createComment({ ...repo, issue_number: m9.number, body: '<!-- waipl-bus:portero v1 -->\nRegistro de ENSAYO escrito por github-actions[bot] desde el simulacro.\n```json\n' + JSON.stringify({ v: 1, verdict: 'ALLOW', para: 'carla', trace: 'ensayo-nvidia-' + context.runId, at: new Date().toISOString() }) + '\n```' });
+      let t9 = Date.now(); publicados = 0;
+      const r9 = await receptor.run({ github: espia(soloEste(m9.number)), repo, dir, env: envR, killed: false, killNow: kill, traza });
+      const d9 = ms(t9);
+      await receptor.resumen(core, traza, r9);
+      const c9 = await github.paginate(github.rest.issues.listComments, { ...repo, issue_number: m9.number, per_page: 100 });
+      const a9 = c9.find((c) => (c.body || '').includes(receptor.MARKER));
+      let g9 = null; try { g9 = JSON.parse(a9.body.match(/```json\n([\s\S]*?)\n```/)[1]); } catch (_) {}
+      const fuga = c9.some((c) => (c.body || '').includes(nvidiaKey));
+      ok('S9', 'Inferencia REAL de NVIDIA publicada como acuse automático, con trazabilidad y sin fuga de la llave',
+        !!a9 && !!g9 && !!g9.modelo && publicados === 1 && !fuga,
+        a9 ? 'modelo=' + g9.modelo + ', respuesta_id=' + g9.respuesta_id + ', ' + d9 + ' ms, comentario ' + a9.html_url : 'sin respuesta; receptor=' + JSON.stringify(r9));
+
+      // 10. Apagado DURANTE una generación real de NVIDIA: se activa bus:kill mientras NVIDIA está generando
+      const m10 = await nuevoIssue('[ENSAYO] hark → carla · apagado durante NVIDIA real', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados.');
+      await github.rest.issues.createComment({ ...repo, issue_number: m10.number, body: '<!-- waipl-bus:portero v1 -->\nRegistro de ENSAYO escrito por github-actions[bot] desde el simulacro.\n```json\n' + JSON.stringify({ v: 1, verdict: 'ALLOW', para: 'carla', trace: 'ensayo-nvidia-kill-' + context.runId, at: new Date().toISOString() }) + '\n```' });
+      let k10 = null, tNv = null;
+      const realConKill = async (url, opts) => {
+        const t = Date.now();
+        const [res] = await Promise.all([fetch(url, opts), (async () => { k10 = await nuevoIssue('[ENSAYO] interruptor durante NVIDIA real', [KILL_LABEL], 'Simulacro: apagado activado mientras NVIDIA genera.');
+          for (let i = 0; i < 20 && !(await kill()); i++) await new Promise((r) => setTimeout(r, 500)); })()]);
+        tNv = Date.now() - t; return res; };
+      publicados = 0;
+      const r10 = await receptor.run({ github: espia(soloEste(m10.number)), repo, dir, env: envR, killed: false, killNow: kill, fetchImpl: realConKill, traza });
+      const h10 = (r10.hechos || [])[0] || {};
+      ok('S10', 'Apagado durante una generación REAL de NVIDIA: no se publica nada', h10.estado === 'APAGADO_EN_MARCHA' && h10.fase === 'antes_de_publicar' && publicados === 0,
+        'resultado=' + JSON.stringify(h10) + ', publicados=' + publicados + ', NVIDIA + activación del apagado ' + tNv + ' ms');
+      if (k10) await cerrar(k10.number);
+    }
 
     // 7. Quién puede poner la etiqueta: GitHub solo deja etiquetar a quien tiene permiso de triaje o superior
     try { const col = await github.paginate(github.rest.repos.listCollaborators, { ...repo, per_page: 100 });
