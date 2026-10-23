@@ -53,7 +53,8 @@ async function run({ github, context, core, dir, varValue }) {
     const msg = await nuevoIssue('[ENSAYO] hark → carla · apagado en marcha', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados.');
     await github.rest.issues.createComment({ ...repo, issue_number: msg.number, body: '<!-- waipl-bus:portero v1 -->\nRegistro de ENSAYO escrito por github-actions[bot] desde el simulacro.\n```json\n' + JSON.stringify({ v: 1, verdict: 'ALLOW', para: 'carla', trace: 'ensayo-' + context.runId, at: new Date().toISOString() }) + '\n```' });
     let tKill = null;
-    const nvidiaFalsa = async () => { await nuevoIssue('[ENSAYO] interruptor en marcha', [KILL_LABEL], 'Simulacro: apagado activado durante la respuesta.'); tKill = Date.now();
+    let k5 = null;
+    const nvidiaFalsa = async () => { k5 = await nuevoIssue('[ENSAYO] interruptor en marcha', [KILL_LABEL], 'Simulacro: apagado activado durante la respuesta.'); tKill = Date.now();
       for (let i = 0; i < 20 && !(await kill()); i++) await new Promise((r) => setTimeout(r, 500)); // espera a que GitHub lo refleje
       return { ok: true, json: async () => ({ id: 'ensayo', choices: [{ message: { content: 'Texto de ensayo que NO debe publicarse.' } }] }) }; };
     publicados = 0;
@@ -79,6 +80,10 @@ async function run({ github, context, core, dir, varValue }) {
       'código anterior habría leído ' + (antes ? antes.verdict + '→' + antes.para : 'nada') + '; código nuevo lee ' + (ahora ? ahora.verdict + '→' + ahora.para : 'ningún registro del bus') + '; llamadas=' + llamadasT + ', publicados=' + publicados);
     creados.push(trampa);
 
+    // Antes del punto 8 se retira el apagado del punto 5 y se espera a que el bus vuelva a estar en marcha.
+    if (k5) await cerrar(k5.number);
+    for (let i = 0; i < 20 && (await kill()); i++) await new Promise((r) => setTimeout(r, 500));
+
     // 8. Trazabilidad REAL (C9) e idempotencia (C5): el receptor publica de verdad en un Issue de ensayo
     // con un proveedor sustituto (sin NVIDIA) y sin apagado.
     const traza = { run_id: context.runId, run_url: `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}` };
@@ -95,7 +100,7 @@ async function run({ github, context, core, dir, varValue }) {
     const lab8 = (await github.rest.issues.get({ ...repo, issue_number: m8.number })).data.labels.map((l) => l.name);
     ok('S8', 'Trazabilidad real: la respuesta lleva clave, trace, run_id y run_url de esta ejecución, y queda resumen en Actions',
       !!reg && reg.clave === 'issue-' + m8.number && reg.trace === tr8 && String(reg.run_id) === String(context.runId) && reg.run_url === traza.run_url && resp.user.login === receptor.BOT,
-      reg ? 'clave=' + reg.clave + ', trace=' + reg.trace + ', run_id=' + reg.run_id + ', autor=' + resp.user.login + ', comentario ' + resp.html_url : 'sin registro');
+      reg ? 'clave=' + reg.clave + ', trace=' + reg.trace + ', run_id=' + reg.run_id + ', autor=' + resp.user.login + ', comentario ' + resp.html_url : 'sin registro; receptor=' + JSON.stringify(r8));
     ok('S8b', 'El acuse pone bus:acuse-auto, nunca bus:received, y dice que no es Carla en persona',
       lab8.includes(receptor.ACK_LABEL) && !lab8.includes('bus:received') && /no es carla en persona/i.test(resp.body), 'etiquetas=' + lab8.join(','));
     publicados = 0;
