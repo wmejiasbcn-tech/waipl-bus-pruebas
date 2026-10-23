@@ -79,9 +79,33 @@ async function run({ github, context, core, dir, varValue }) {
       'código anterior habría leído ' + (antes ? antes.verdict + '→' + antes.para : 'nada') + '; código nuevo lee ' + (ahora ? ahora.verdict + '→' + ahora.para : 'ningún registro del bus') + '; llamadas=' + llamadasT + ', publicados=' + publicados);
     creados.push(trampa);
 
+    // 8. Trazabilidad REAL (C9) e idempotencia (C5): el receptor publica de verdad en un Issue de ensayo
+    // con un proveedor sustituto (sin NVIDIA) y sin apagado.
+    const traza = { run_id: context.runId, run_url: `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}` };
+    const m8 = await nuevoIssue('[ENSAYO] hark → carla · trazabilidad', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados.');
+    const tr8 = 'ensayo-traza-' + context.runId;
+    await github.rest.issues.createComment({ ...repo, issue_number: m8.number, body: '<!-- waipl-bus:portero v1 -->\nRegistro de ENSAYO escrito por github-actions[bot] desde el simulacro.\n```json\n' + JSON.stringify({ v: 1, verdict: 'ALLOW', para: 'carla', trace: tr8, at: new Date().toISOString() }) + '\n```' });
+    const prov = async () => ({ ok: true, json: async () => ({ id: 'ensayo-8', model: 'sustituto-sin-nvidia', choices: [{ message: { content: 'Acuse de ensayo (texto inventado).' } }] }) });
+    publicados = 0;
+    const r8 = await receptor.run({ github: espia(soloEste(m8.number)), repo, dir, env: { NVIDIA_API_KEY: 'ensayo-sin-valor-real' }, killed: false, killNow: kill, fetchImpl: prov, traza });
+    await receptor.resumen(core, traza, r8);
+    const c8 = await github.paginate(github.rest.issues.listComments, { ...repo, issue_number: m8.number, per_page: 100 });
+    const resp = c8.find((c) => (c.body || '').includes(receptor.MARKER));
+    let reg = null; try { reg = JSON.parse(resp.body.match(/```json\n([\s\S]*?)\n```/)[1]); } catch (_) {}
+    const lab8 = (await github.rest.issues.get({ ...repo, issue_number: m8.number })).data.labels.map((l) => l.name);
+    ok('S8', 'Trazabilidad real: la respuesta lleva clave, trace, run_id y run_url de esta ejecución, y queda resumen en Actions',
+      !!reg && reg.clave === 'issue-' + m8.number && reg.trace === tr8 && String(reg.run_id) === String(context.runId) && reg.run_url === traza.run_url && resp.user.login === receptor.BOT,
+      reg ? 'clave=' + reg.clave + ', trace=' + reg.trace + ', run_id=' + reg.run_id + ', autor=' + resp.user.login + ', comentario ' + resp.html_url : 'sin registro');
+    ok('S8b', 'El acuse pone bus:acuse-auto, nunca bus:received, y dice que no es Carla en persona',
+      lab8.includes(receptor.ACK_LABEL) && !lab8.includes('bus:received') && /no es carla en persona/i.test(resp.body), 'etiquetas=' + lab8.join(','));
+    publicados = 0;
+    const r8b = await receptor.run({ github: espia(soloEste(m8.number)), repo, dir, env: { NVIDIA_API_KEY: 'ensayo-sin-valor-real' }, killed: false, killNow: kill, fetchImpl: prov, traza });
+    ok('S8c', 'Idempotencia real: una segunda pasada no vuelve a responder', publicados === 0 && !(r8b.hechos || []).length, 'publicados=' + publicados);
+
     // 7. Quién puede poner la etiqueta: GitHub solo deja etiquetar a quien tiene permiso de triaje o superior
     try { const col = await github.paginate(github.rest.repos.listCollaborators, { ...repo, per_page: 100 });
-      ok('S7', 'Personas con permiso para etiquetar', true, col.map((c) => c.login + ':' + c.role_name).join(', ')); }
+      const inst = await github.rest.issues.listForRepo({ ...repo, labels: KILL_LABEL, state: 'all', creator: 'hark-ai[bot]', per_page: 1 }).catch(() => ({ data: [] }));
+      ok('S7', 'Personas con permiso para etiquetar (GitHub exige permiso de triaje o superior)', col.length === 1 && col[0].login === 'wmejiasbcn-tech', col.map((c) => c.login + ':' + c.role_name).join(', ')); }
     catch (e) { filas.push(['S7', 'Personas con permiso para etiquetar', 'SIN DATO', 'el token del workflow no puede listar colaboradores (HTTP ' + e.status + ')']); }
   } finally {
     for (const n of creados) { try { await cerrar(n); } catch (_) {} }
