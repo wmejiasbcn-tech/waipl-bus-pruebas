@@ -103,4 +103,11 @@ async function run({ github, repo, dir, env, killed, killNow, traza, fetchImpl, 
   return { estado: 'OK', hechos };
 }
 
-module.exports = { run, cartas, prompt, preguntarNvidia, ACK_LABEL, MARKER, MAX_POR_PASADA, BOT };
+// Resumen de la ejecución en GitHub Actions (trazabilidad fuera del Issue). Lo usan el workflow y el ensayo.
+async function resumen(core, traza, r) {
+  await core.summary.addHeading('WAIPL-BUS receptor').addRaw('Ejecución ' + traza.run_id + ' · estado: ' + r.estado + ' · ' + new Date().toISOString()).addBreak()
+    .addTable([[{ data: 'Issue', header: true }, { data: 'Nodo', header: true }, { data: 'Resultado', header: true }, { data: 'Detalle', header: true }],
+      ...((r.hechos || []).map((h) => [String(h.issue), h.nodo, h.estado, String(h.status || h.fase || '')]))]).write();
+}
+
+module.exports = { run, resumen, cartas, prompt, preguntarNvidia, ACK_LABEL, MARKER, MAX_POR_PASADA, BOT };
