@@ -23,6 +23,11 @@ concurrency:
 jobs:
   receptor:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Solo en este repositorio (no en copias) y solo si el portero terminó bien o es un barrido/arranque manual.
+    if: >-
+      github.repository == 'wmejiasbcn-tech/waipl-bus-pruebas' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,8 +45,9 @@ jobs:
             const fs = require('fs');
             const dir = process.env.GITHUB_WORKSPACE + '/.github/waipl-bus/';
             const receptor = require(dir + 'receptor.js');
-            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8').trim() : '';
-            const killed = String(process.env.BUS_KILL || killFile || '').toLowerCase() === 'true';
+            const { isKilled } = require(dir + 'kill.js');
+            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8') : '';
+            const killed = isKilled(process.env.BUS_KILL, killFile); // la parada manda siempre
             const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed });
             core.info('Receptor: ' + JSON.stringify(r));
             if (r.estado === 'SIN_LLAVE') core.warning('Falta el secreto NVIDIA_API_KEY: no se publica nada.');
