@@ -242,7 +242,7 @@ test('Archivos reales: piloto 14 días — permiso vigente ALLOW, sin permiso DE
   const fuera = new Date('2026-11-05T20:42:00Z');
   assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: dentro }).verdict, 'ALLOW');
   // En el repo de pruebas, T-001 (soberano → *) vale hasta el 29-10; después, soberano → hermes no tiene permiso.
-  const trasT = new Date('Fri 2026-10-30 12:00 PM CET (UTC+01:00)');
+  const trasT = new Date(Date.UTC(2026, 9, 30, 11, 0, 0));
   assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'hermes' }), nodes, permits, now: trasT }).verdict, 'DENY');
   assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: fuera }).verdict, 'DENY');
 });
