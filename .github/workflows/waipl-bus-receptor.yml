@@ -45,9 +45,15 @@ jobs:
             const fs = require('fs');
             const dir = process.env.GITHUB_WORKSPACE + '/.github/waipl-bus/';
             const receptor = require(dir + 'receptor.js');
-            const { isKilled } = require(dir + 'kill.js');
+            const { isKilled, killAhora } = require(dir + 'kill.js');
             const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8') : '';
             const killed = isKilled(process.env.BUS_KILL, killFile); // la parada manda siempre
-            const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed });
+            const killNow = () => killAhora({ github, repo: context.repo, varValue: process.env.BUS_KILL });
+            const traza = { run_id: context.runId, run_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` };
+            const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed, killNow, traza });
             core.info('Receptor: ' + JSON.stringify(r));
+            // Registro fuera del Issue: resumen de la ejecución en GitHub Actions (trazabilidad).
+            await core.summary.addHeading('WAIPL-BUS receptor').addRaw('Ejecución ' + traza.run_id + ' · estado: ' + r.estado + ' · ' + new Date().toISOString()).addBreak()
+              .addTable([[{ data: 'Issue', header: true }, { data: 'Nodo', header: true }, { data: 'Resultado', header: true }, { data: 'Detalle', header: true }],
+                ...((r.hechos || []).map((h) => [String(h.issue), h.nodo, h.estado, String(h.status || h.fase || '')]))]).write();
             if (r.estado === 'SIN_LLAVE') core.warning('Falta el secreto NVIDIA_API_KEY: no se publica nada.');
