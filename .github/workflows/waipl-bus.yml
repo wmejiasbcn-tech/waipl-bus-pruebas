@@ -1,7 +1,7 @@
 name: WAIPL-BUS portero
 
 # REPO DE PRUEBAS waipl-bus-pruebas (público, SOLO datos inventados). Desde 2026-10-23 aloja también el PILOTO WAIPL-BUS,
-# trasladado desde el Lab (allí queda dormido, PR #228). Nodos de prueba alfa/beta + piloto soberano/carla/hark/ada.
+# trasladado desde el Lab (allí se durmió en la PR #228 y Sentinel lo retiró en la PR #230). Nodos de prueba alfa/beta + piloto soberano/carla/hark/ada.
 # Original: GitHub solo ejecuta los
 # disparadores de issues y schedule desde la rama principal (main). Nada corre hasta que William fusione.
 #
