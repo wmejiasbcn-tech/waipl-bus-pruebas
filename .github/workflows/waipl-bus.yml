@@ -1,6 +1,7 @@
 name: WAIPL-BUS portero
 
-# REPO DE PRUEBAS waipl-bus-pruebas: copia del borrador de Will-AI-Project-Lab#217, ACTIVO solo aquí, con nodos inventados (alfa, beta).
+# REPO DE PRUEBAS waipl-bus-pruebas (público, SOLO datos inventados). Desde 2026-10-23 aloja también el PILOTO WAIPL-BUS,
+# trasladado desde el Lab (allí queda dormido, PR #228). Nodos de prueba alfa/beta + piloto soberano/carla/hark/ada.
 # Original: GitHub solo ejecuta los
 # disparadores de issues y schedule desde la rama principal (main). Nada corre hasta que William fusione.
 #
@@ -50,6 +51,9 @@ jobs:
           # Sello de cada nodo (secretos del repo). Un nodo sin secreto no puede hablar a través de la cuenta del soberano.
           BUS_SEAL_ALFA: ${{ secrets.BUS_SEAL_ALFA }}
           BUS_SEAL_BETA: ${{ secrets.BUS_SEAL_BETA }}
+          BUS_SEAL_HARK: ${{ secrets.BUS_SEAL_HARK }}
+          BUS_SEAL_CARLA: ${{ secrets.BUS_SEAL_CARLA }}
+          BUS_SEAL_ADA: ${{ secrets.BUS_SEAL_ADA }}
           HERMES_WEBHOOK_URL: ${{ secrets.HERMES_WEBHOOK_URL }}
           HERMES_WEBHOOK_SECRET: ${{ secrets.HERMES_WEBHOOK_SECRET }}
         with:
@@ -59,6 +63,7 @@ jobs:
             const config = {
               nodes: Object.fromEntries(Object.entries(require(dir + 'nodes.json')).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k.toLowerCase(), v])),
               permits: require(dir + 'permits.json').permits,
+              apps: Object.fromEntries(Object.entries(require(dir + 'apps.json')).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k.toLowerCase(), v])),
               seals: Object.fromEntries(Object.entries(process.env).filter(([k, v]) => k.startsWith('BUS_SEAL_') && v && v.length >= 32).map(([k, v]) => [k.slice(9).toLowerCase(), v])),
             };
             // SOLO EN EL REPO DE PRUEBAS: la app Hark no puede crear secretos ni variables (HTTP 403),

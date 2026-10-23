@@ -1,5 +1,5 @@
 {
-  "_nota": "REPO DE PRUEBAS. Nodos inventados alfa y beta. Fechas reales de prueba (7 días). Ningún dato del ecosistema.",
+  "_nota": "REPO DE PRUEBAS. Nodos inventados alfa y beta. Fechas reales de prueba (7 días). Ningún dato del ecosistema. Desde el 2026-10-23 también aloja el PILOTO WAIPL-BUS (soberano, carla, hark, ada; permisos P-1xx hasta el 2026-11-05 21:41 CET), trasladado desde el Lab por orden de William: aquí SOLO datos inventados o no sensibles.",
   "permits": [
     {
       "id": "T-001",
@@ -32,6 +32,102 @@
       "cap": "*",
       "granted_by": "soberano",
       "expires_at": "2026-10-29T18:00:00Z"
+    },
+    {
+      "id": "P-101",
+      "src": "soberano",
+      "dst": "carla",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-102",
+      "src": "carla",
+      "dst": "soberano",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-103",
+      "src": "soberano",
+      "dst": "hark",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-104",
+      "src": "hark",
+      "dst": "soberano",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-105",
+      "src": "soberano",
+      "dst": "ada",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-106",
+      "src": "ada",
+      "dst": "soberano",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-107",
+      "src": "carla",
+      "dst": "hark",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-108",
+      "src": "hark",
+      "dst": "carla",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-109",
+      "src": "carla",
+      "dst": "ada",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-110",
+      "src": "ada",
+      "dst": "carla",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-111",
+      "src": "hark",
+      "dst": "ada",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
+    },
+    {
+      "id": "P-112",
+      "src": "ada",
+      "dst": "hark",
+      "cap": "*",
+      "granted_by": "soberano",
+      "expires_at": "2026-11-05T20:41:00Z"
     }
   ]
 }

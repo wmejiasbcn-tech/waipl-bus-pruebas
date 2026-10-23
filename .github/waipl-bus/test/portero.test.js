@@ -235,11 +235,16 @@ test('Hermes: sin URL no se envía nada; con secreto corto tampoco', async () =>
   assert.equal((await portero.forwardToHermes({ HERMES_WEBHOOK_URL: 'https://x', HERMES_WEBHOOK_SECRET: 'x'.repeat(32) }, {}, f)).sent, true);
 });
 
-test('Archivos reales: con permits.json del piloto (PENDIENTE) todo es DENY, incluido el soberano', () => {
+test('Archivos reales: piloto 14 días — permiso vigente ALLOW, sin permiso DENY, caducado DENY', () => {
   const nodes = require('../nodes.json');
   const permits = require('../permits.json').permits;
-  const d = policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: NOW });
-  assert.equal(d.verdict, 'DENY');
+  const dentro = new Date('2026-10-23T10:00:00Z');
+  const fuera = new Date('2026-11-05T20:42:00Z');
+  assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: dentro }).verdict, 'ALLOW');
+  // En el repo de pruebas, T-001 (soberano → *) vale hasta el 29-10; después, soberano → hermes no tiene permiso.
+  const trasT = new Date('Fri 2026-10-30 12:00 PM CET (UTC+01:00)');
+  assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'hermes' }), nodes, permits, now: trasT }).verdict, 'DENY');
+  assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: fuera }).verdict, 'DENY');
 });
 
 // ---------- Sello por nodo (identidad aunque se escriba con la cuenta del soberano) ----------
@@ -323,4 +328,47 @@ test('Carrera real: si otra ejecución crea la etiqueta a la vez (422), el porte
   const r = await portero.processIssue({ github, repo: REPO, issue, config: CONFIG, killed: false, now: NOW });
   assert.equal(r.decision.verdict, 'ALLOW');
   assert.equal(ledgers(state, 20).length, 1);
+});
+
+test('Recibido por app: la cuenta del soberano vía la app de Carla cuenta como Carla; sin app o con otra app, no', async () => {
+  const { github, addIssue } = fakeGithub();
+  const config = { ...CONFIG, apps: { 'chatgpt-codex-connector': 'carla' } };
+  const issue = addIssue(20, 'wmejiasbcn-tech', body({ de: 'soberano', para: 'carla' }));
+  await portero.processIssue({ github, repo: REPO, issue, config, killed: false, now: NOW });
+  const plain = await portero.processComment({ github, repo: REPO, issue, comment: { user: { login: 'wmejiasbcn-tech' } }, config });
+  assert.equal(plain.received, false);
+  const other = await portero.processComment({ github, repo: REPO, issue, comment: { user: { login: 'wmejiasbcn-tech' }, performed_via_github_app: { slug: 'hark' } }, config });
+  assert.equal(other.received, false);
+  const yes = await portero.processComment({ github, repo: REPO, issue, comment: { user: { login: 'wmejiasbcn-tech' }, performed_via_github_app: { slug: 'chatgpt-codex-connector' } }, config });
+  assert.equal(yes.received, true);
+  assert.ok(issue.labels.includes('bus:received'));
+});
+
+test('Recibido por app: la app desde una cuenta que no es del soberano no cuenta, y el mensaje para otro nodo tampoco', async () => {
+  const { github, addIssue } = fakeGithub();
+  const config = { ...CONFIG, apps: { 'chatgpt-codex-connector': 'carla' } };
+  const toAda = addIssue(21, 'wmejiasbcn-tech', body({ de: 'soberano', para: 'ada' }));
+  await portero.processIssue({ github, repo: REPO, issue: toAda, config, killed: false, now: NOW });
+  const r1 = await portero.processComment({ github, repo: REPO, issue: toAda, comment: { user: { login: 'wmejiasbcn-tech' }, performed_via_github_app: { slug: 'chatgpt-codex-connector' } }, config });
+  assert.equal(r1.received, false);
+  const toCarla = addIssue(22, 'wmejiasbcn-tech', body({ de: 'soberano', para: 'carla' }));
+  await portero.processIssue({ github, repo: REPO, issue: toCarla, config, killed: false, now: NOW });
+  const r2 = await portero.processComment({ github, repo: REPO, issue: toCarla, comment: { user: { login: 'extrano' }, performed_via_github_app: { slug: 'chatgpt-codex-connector' } }, config });
+  assert.equal(r2.received, false);
+});
+
+test('Atasco: una respuesta de Carla vía su app evita bus:stalled', () => {
+  const allowedAt = '2026-11-01T10:00:00Z';
+  const now = new Date('2026-11-02T12:00:00Z');
+  const apps = { 'chatgpt-codex-connector': 'carla' };
+  const c = [{ user: { login: 'wmejiasbcn-tech' }, performed_via_github_app: { slug: 'chatgpt-codex-connector' }, created_at: '2026-11-01T11:00:00Z' }];
+  assert.equal(policy.isStalled({ allowedAt, comments: c, destNode: 'carla', nodes: NODES, apps, now, hours: 24 }), false);
+  // Sin apps.json, esa misma respuesta no cuenta como de Carla → atascado.
+  assert.equal(policy.isStalled({ allowedAt, comments: c, destNode: 'carla', nodes: NODES, apps: {}, now, hours: 24 }), true);
+});
+
+test('Archivo real apps.json: solo mapea la conexión de ChatGPT a carla', () => {
+  const apps = require('../apps.json');
+  const entries = Object.entries(apps).filter(([k]) => !k.startsWith('_'));
+  assert.deepEqual(entries, [['chatgpt-codex-connector', 'carla']]);
 });
