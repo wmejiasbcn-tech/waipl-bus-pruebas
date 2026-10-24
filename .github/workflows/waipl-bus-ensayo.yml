@@ -1,6 +1,6 @@
-name: WAIPL-BUS ensayo del receptor (aislado, sin NVIDIA)
+name: WAIPL-BUS ensayo del receptor (aislado; NVIDIA real en S9 y S10 si existe el secreto)
 
-# Hark, 24-10-2026. Prueba REAL en GitHub Actions, sin fusionar en main y sin llave de NVIDIA.
+# Hark, 24-10-2026. Prueba REAL en GitHub Actions, sin fusionar en main. Si existe el secreto NVIDIA_API_KEY, S9 y S10 llaman a NVIDIA de verdad (máximo 2 llamadas); si no existe, no se llama a NVIDIA.
 # Corre en la propia PR (rama hark/receptor-nvidia). Solo datos inventados.
 # 1) Ejecuta todas las pruebas simuladas en Actions.  2) Simulacro real del apagado con la etiqueta bus:kill.
 on:
@@ -45,7 +45,7 @@ jobs:
         with:
           sparse-checkout: .github/waipl-bus
           persist-credentials: false
-      - name: Simulacro real del apagado (sin NVIDIA_API_KEY)
+      - name: Simulacro real del apagado y NVIDIA real en S9 y S10 (si existe NVIDIA_API_KEY)
         uses: actions/github-script@v7
         env:
           BUS_KILL: ${{ vars.BUS_KILL }}
