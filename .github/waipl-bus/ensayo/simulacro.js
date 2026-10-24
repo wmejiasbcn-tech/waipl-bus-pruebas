@@ -130,17 +130,21 @@ async function run({ github, context, core, dir, varValue, nvidiaKey }) {
       // 10. Apagado DURANTE una generación real de NVIDIA: se activa bus:kill mientras NVIDIA está generando
       const m10 = await nuevoIssue('[ENSAYO] hark → carla · apagado durante NVIDIA real', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados.');
       await github.rest.issues.createComment({ ...repo, issue_number: m10.number, body: '<!-- waipl-bus:portero v1 -->\nRegistro de ENSAYO escrito por github-actions[bot] desde el simulacro.\n```json\n' + JSON.stringify({ v: 1, verdict: 'ALLOW', para: 'carla', trace: 'ensayo-nvidia-kill-' + context.runId, at: new Date().toISOString() }) + '\n```' });
-      let k10 = null, tNv = null;
+      let k10 = null, tNv = null, tKillOn = null, tResp = null, nvId = null;
+      // Evidencia directa: hora en que NVIDIA responde (con su id de respuesta) y hora en que el apagado ya está activo.
       const realConKill = async (url, opts) => {
         const t = Date.now();
-        const [res] = await Promise.all([fetch(url, opts), (async () => { k10 = await nuevoIssue('[ENSAYO] interruptor durante NVIDIA real', [KILL_LABEL], 'Simulacro: apagado activado mientras NVIDIA genera.');
-          for (let i = 0; i < 20 && !(await kill()); i++) await new Promise((r) => setTimeout(r, 500)); })()]);
+        const pNv = fetch(url, opts).then(async (res) => { tResp = Date.now() - t; try { nvId = (await res.clone().json()).id || null; } catch (_) {} return res; });
+        const pKill = (async () => { k10 = await nuevoIssue('[ENSAYO] interruptor durante NVIDIA real', [KILL_LABEL], 'Simulacro: apagado activado mientras NVIDIA genera.');
+          for (let i = 0; i < 20; i++) { if (await kill()) { tKillOn = Date.now() - t; break; } await new Promise((r) => setTimeout(r, 500)); } })();
+        const [res] = await Promise.all([pNv, pKill]);
         tNv = Date.now() - t; return res; };
       publicados = 0;
       const r10 = await receptor.run({ github: espia(soloEste(m10.number)), repo, dir, env: envR, killed: false, killNow: kill, fetchImpl: realConKill, traza });
       const h10 = (r10.hechos || [])[0] || {};
-      ok('S10', 'Apagado durante una generación REAL de NVIDIA: no se publica nada', h10.estado === 'APAGADO_EN_MARCHA' && h10.fase === 'antes_de_publicar' && publicados === 0,
-        'resultado=' + JSON.stringify(h10) + ', publicados=' + publicados + ', NVIDIA + activación del apagado ' + tNv + ' ms');
+      ok('S10', 'Apagado durante una generación REAL de NVIDIA: no se publica nada', h10.estado === 'APAGADO_EN_MARCHA' && h10.fase === 'antes_de_publicar' && publicados === 0 && !!nvId && tKillOn !== null && tResp !== null && tKillOn <= tResp,
+        'resultado=' + JSON.stringify(h10) + ', publicados=' + publicados + ', apagado activo a los ' + tKillOn + ' ms, NVIDIA respondió a los ' + tResp + ' ms con respuesta_id=' + nvId + ' (el apagado llegó antes de que NVIDIA terminara), Issue #' + m10.number);
+      core.info('S10 evidencia: tKillOn=' + tKillOn + ' ms, tResp=' + tResp + ' ms, nvId=' + nvId + ', issue=' + m10.number);
       if (k10) await cerrar(k10.number);
     }
 
