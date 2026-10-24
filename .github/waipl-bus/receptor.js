@@ -43,7 +43,7 @@ const TIEMPO_MAX_MS = 60000;
 
 async function preguntarNvidia({ env, messages, fetchImpl }) {
   const base = (env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/\/$/, '');
-  const model = env.NVIDIA_MODEL || 'nvidia/nemotron-3-super-120b-a12b';
+  const model = env.NVIDIA_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b';
   let res, body;
   try {
     // Errores de red y tiempo agotado: no se publica nada (falla cerrado). El mensaje de error
