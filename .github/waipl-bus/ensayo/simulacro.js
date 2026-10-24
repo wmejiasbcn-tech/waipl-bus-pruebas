@@ -1,4 +1,4 @@
-// WAIPL-BUS · Simulacro REAL del apagado del receptor, en GitHub Actions y sin NVIDIA (Hark, 24-10-2026).
+// WAIPL-BUS · Simulacro REAL del apagado del receptor, en GitHub Actions con NVIDIA real solo en S9 y S10 si existe el secreto (Hark, 24-10-2026).
 // Usa la API real de GitHub del repo de pruebas. Crea Issues marcados [ENSAYO] con datos inventados y los cierra al acabar.
 // No usa NVIDIA_API_KEY: el «NVIDIA» de la prueba 4 es un sustituto local que no sale a Internet.
 'use strict';
@@ -154,12 +154,12 @@ async function run({ github, context, core, dir, varValue, nvidiaKey }) {
   }
 
   const ejecucion = `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
-  await core.summary.addHeading('Simulacro real del apagado (sin NVIDIA)').addRaw('Ejecución ' + context.runId + ' · ' + new Date().toISOString()).addBreak()
+  await core.summary.addHeading('Simulacro real del apagado' + (nvidiaKey ? ' + NVIDIA real en S9 y S10' : ' (sin NVIDIA)')).addRaw('Ejecución ' + context.runId + ' · ' + new Date().toISOString()).addBreak()
     .addTable([[{ data: 'Id', header: true }, { data: 'Criterio', header: true }, { data: 'Resultado', header: true }, { data: 'Detalle', header: true }], ...filas]).write();
   const tabla = '| Id | Criterio | Resultado | Detalle |\n|---|---|---|---|\n' + filas.map((f) => '| ' + f.join(' | ') + ' |').join('\n');
   if (context.payload.pull_request) {
     await github.rest.issues.createComment({ ...repo, issue_number: context.payload.pull_request.number, body:
-      '**Simulacro REAL en GitHub Actions** (sin NVIDIA, sin fusionar) · [ejecución ' + context.runId + '](' + ejecucion + ')\n\n' + tabla + '\n\nIssues de ensayo creados y cerrados: ' + creados.map((n) => '#' + n).join(', ') });
+      '**Simulacro REAL en GitHub Actions** (' + (nvidiaKey ? 'NVIDIA real en S9 y S10' : 'sin NVIDIA') + ', sin fusionar) · [ejecución ' + context.runId + '](' + ejecucion + ')\n\n' + tabla + '\n\nIssues de ensayo creados y cerrados: ' + creados.map((n) => '#' + n).join(', ') });
   }
   return { ok: fallos.length === 0, fallos, filas, creados };
 }
