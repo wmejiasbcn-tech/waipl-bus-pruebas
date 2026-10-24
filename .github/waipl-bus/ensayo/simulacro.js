@@ -36,7 +36,8 @@ async function run({ github, context, core, dir, varValue, nvidiaKey }) {
 
     // 3. Receptor real con apagado: no procesa nada
     let publicados = 0;
-    const espia = (g) => { const c = g.rest.issues.createComment; g.rest.issues.createComment = async (a) => { publicados++; return c(a); }; return g; };
+    // Se envuelve una sola vez: todas las copias comparten github.rest.issues y envolver de nuevo contaba cada publicación varias veces.
+    const espia = (g) => { if (!g.rest.issues.createComment.__espia) { const c = g.rest.issues.createComment; const w = async (a) => { publicados++; return c(a); }; w.__espia = true; g.rest.issues.createComment = w; } return g; };
     const r3 = await receptor.run({ github: espia(github), repo, dir, env: {}, killed: false, killNow: kill });
     ok('S3', 'Con apagado, el receptor no procesa ni publica', r3.estado === 'APAGADO' && publicados === 0, 'estado=' + r3.estado + ', publicados=' + publicados);
 
@@ -124,7 +125,7 @@ async function run({ github, context, core, dir, varValue, nvidiaKey }) {
       const fuga = c9.some((c) => (c.body || '').includes(nvidiaKey));
       ok('S9', 'Inferencia REAL de NVIDIA publicada como acuse automático, con trazabilidad y sin fuga de la llave',
         !!a9 && !!g9 && !!g9.modelo && publicados === 1 && !fuga,
-        a9 ? 'modelo=' + g9.modelo + ', respuesta_id=' + g9.respuesta_id + ', ' + d9 + ' ms, comentario ' + a9.html_url : 'sin respuesta; receptor=' + JSON.stringify(r9));
+        a9 ? 'publicados=' + publicados + ', modelo=' + g9.modelo + ', respuesta_id=' + g9.respuesta_id + ', ' + d9 + ' ms, comentario ' + a9.html_url : 'sin respuesta; receptor=' + JSON.stringify(r9));
 
       // 10. Apagado DURANTE una generación real de NVIDIA: se activa bus:kill mientras NVIDIA está generando
       const m10 = await nuevoIssue('[ENSAYO] hark → carla · apagado durante NVIDIA real', ['bus', 'bus:allowed'], 'Mensaje de ensayo con datos inventados.');
