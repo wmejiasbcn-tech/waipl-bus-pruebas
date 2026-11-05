@@ -239,7 +239,7 @@ test('Archivos reales: piloto 14 días — permiso vigente ALLOW, sin permiso DE
   const nodes = require('../nodes.json');
   const permits = require('../permits.json').permits;
   const dentro = new Date('2026-10-23T10:00:00Z');
-  const fuera = new Date('2026-11-05T20:42:00Z');
+  const fuera = new Date('2026-11-19T20:42:00Z');
   assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: dentro }).verdict, 'ALLOW');
   // En el repo de pruebas, T-001 (soberano → *) vale hasta el 29-10; después, soberano → hermes no tiene permiso.
   const trasT = new Date(Date.UTC(2026, 9, 30, 11, 0, 0));
