@@ -72,8 +72,8 @@ jobs:
             if (!Object.keys(config.seals).length && fs.existsSync(dir + 'seals-prueba.json')) {
               config.seals = require(dir + 'seals-prueba.json').seals;
             }
-            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8').trim() : '';
-            const killed = String(process.env.BUS_KILL || killFile || '').toLowerCase() === 'true';
+            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8') : '';
+            const killed = require(dir + 'kill.js').isKilled(process.env.BUS_KILL, killFile); // la parada manda siempre (revisión de Carla, PR #47)
             const stallHours = Number(process.env.BUS_STALL_HOURS || 24);
             const repo = context.repo;
             const common = { github, repo, config, killed, runId: context.runId, env: process.env };
