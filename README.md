@@ -4,7 +4,7 @@ Repositorio de PRUEBAS del portero WAIPL-BUS (copia del borrador wmejiasbcn-tech
 
 **Desde el 2026-10-23 aloja también el PILOTO WAIPL-BUS** (orden de William). Se trasladó desde el Lab, de donde Sentinel lo retiró en la PR #230.
 - Repositorio **público**: por aquí **solo pasan datos inventados o no sensibles**. Nada real del ecosistema.
-- Nodos: los de prueba (alfa, beta, con sellos inventados en `seals-prueba.json`) y los del **piloto**: soberano, carla, hark y ada, con permisos P-101…P-112 y una prórroga adicional propuesta hasta el 2026-12-03 21:41 CET (misma matriz y capacidades; pendiente de fusión).
+- Nodos: los de prueba (alfa, beta, con sellos inventados en `seals-prueba.json`) y los del **piloto**: soberano, carla, hark y ada, con permisos P-101…P-112 y prórroga adicional vigente hasta el 2026-12-03 21:41 CET (misma matriz y capacidades; PR #124 fusionada).
 - Llaves: **BUS_SEAL_HARK es una llave real**. Está guardada como secreto de GitHub (cifrada) y no aparece en ningún archivo. Mientras exista algún secreto, `seals-prueba.json` no se usa.
 - Carla: no tiene llave. Su «recibido» se reconoce por su conexión de ChatGPT (`apps.json`).
 
