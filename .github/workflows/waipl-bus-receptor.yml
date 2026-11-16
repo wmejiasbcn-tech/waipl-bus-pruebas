@@ -1,0 +1,57 @@
+name: WAIPL-BUS receptor (NVIDIA)
+
+# BORRADOR de Hark (2026-10-23). REPO DE PRUEBAS: solo datos inventados.
+# Se ejecuta cuando termina el portero y cada 15 minutos. Sin el secreto NVIDIA_API_KEY no publica nada (falla cerrado).
+# Responde como portavoz automático; nunca pone bus:received.
+
+on:
+  workflow_run:
+    workflows: ["WAIPL-BUS portero"]
+    types: [completed]
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: waipl-bus-receptor
+  cancel-in-progress: false
+
+jobs:
+  receptor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Solo en este repositorio (no en copias) y solo si el portero terminó bien o es un barrido/arranque manual.
+    if: >-
+      github.repository == 'wmejiasbcn-tech/waipl-bus-pruebas' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/waipl-bus
+          persist-credentials: false
+      - name: Receptor
+        uses: actions/github-script@v7
+        env:
+          BUS_KILL: ${{ vars.BUS_KILL }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          NVIDIA_BASE_URL: ${{ vars.NVIDIA_BASE_URL }}
+          NVIDIA_MODEL: ${{ vars.NVIDIA_MODEL }}
+        with:
+          script: |
+            const fs = require('fs');
+            const dir = process.env.GITHUB_WORKSPACE + '/.github/waipl-bus/';
+            const receptor = require(dir + 'receptor.js');
+            const { isKilled, killAhora } = require(dir + 'kill.js');
+            const killFile = fs.existsSync(dir + 'BUS_KILL') ? fs.readFileSync(dir + 'BUS_KILL', 'utf8') : '';
+            const killed = isKilled(process.env.BUS_KILL, killFile); // la parada manda siempre
+            const killNow = () => killAhora({ github, repo: context.repo, varValue: process.env.BUS_KILL });
+            const traza = { run_id: context.runId, run_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` };
+            const r = await receptor.run({ github, repo: context.repo, dir, env: process.env, killed, killNow, traza });
+            core.info('Receptor: ' + JSON.stringify(r));
+            // Registro fuera del Issue: resumen de la ejecución en GitHub Actions (trazabilidad).
+            await receptor.resumen(core, traza, r);
+            if (r.estado === 'SIN_LLAVE') core.warning('Falta el secreto NVIDIA_API_KEY: no se publica nada.');
