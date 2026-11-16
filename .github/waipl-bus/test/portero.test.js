@@ -235,11 +235,11 @@ test('Hermes: sin URL no se envía nada; con secreto corto tampoco', async () =>
   assert.equal((await portero.forwardToHermes({ HERMES_WEBHOOK_URL: 'https://x', HERMES_WEBHOOK_SECRET: 'x'.repeat(32) }, {}, f)).sent, true);
 });
 
-test('Archivos reales: piloto 14 días — permiso vigente ALLOW, sin permiso DENY, caducado DENY', () => {
+test('Archivos reales: piloto prorrogado — permiso vigente justo antes del vencimiento ALLOW, sin permiso DENY, en el vencimiento DENY', () => {
   const nodes = require('../nodes.json');
   const permits = require('../permits.json').permits;
-  const dentro = new Date('2026-10-23T10:00:00Z');
-  const fuera = new Date('2026-11-19T20:42:00Z');
+  const dentro = new Date('2026-12-03T20:40:59Z');
+  const fuera = new Date('2026-12-03T20:41:00Z');
   assert.equal(policy.decide({ actorLogin: 'wmejiasbcn-tech', body: body({ de: 'soberano', para: 'ada' }), nodes, permits, now: dentro }).verdict, 'ALLOW');
   // En el repo de pruebas, T-001 (soberano → *) vale hasta el 29-10; después, soberano → hermes no tiene permiso.
   const trasT = new Date(Date.UTC(2026, 9, 30, 11, 0, 0));
